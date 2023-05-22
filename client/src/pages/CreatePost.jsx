@@ -1,22 +1,71 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { preview } from "../assets";
-import { getRandomPrompt } from "../utils";
-import { FormFild, Loader } from "../components";
+import { preview } from '../assets';
+import { getRandomPrompt } from '../utils';
+import { FormFild, Loader } from '../components';
 
 const CreatePost = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: "",
-    prompt: "",
-    photo: "",
+    name: '',
+    prompt: '',
+    photo: '',
   });
-  const [generatingImg, setGeratingImg] = useState(false);
+  const [generatingImg, setGeneratingImg] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const generateImg = () => {};
-  const handleSubmit = () => {};
+  const generateImg = async () => {
+    if (form.prompt) {
+      try {
+        setGeneratingImg(true);
+        const response = await fetch('http://localhost:8080/api/v1/dalle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: form.prompt }),
+        });
+
+        const data = await response.json();
+
+        setForm({ ...form, photo: `data:image/jpeg;base64,${data.photo}` });
+      } catch (error) {
+        alert(error);
+      } finally {
+        setGeneratingImg(false);
+      }
+    } else {
+      alert('Please enter a prompt');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (form.prompt) {
+      setLoading(true);
+
+      try {
+        const response = await fetch('http://localhost:8080/api/v1/post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...form }),
+        });
+
+        await response.json();
+        navigate('/');
+      } catch (err) {
+        alert(err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      alert('Please generate an image with proper details');
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,7 +80,7 @@ const CreatePost = () => {
     <section className="max-w-7xl mx-auto">
       <div>
         <h1 className="font-extrabold text-[#222328] text-[32px] ">Create</h1>
-        <p className="mt-2 text-[#666e75] text-[16px] max-w[500px]">
+        <p className="mt-2 text-[#666e75] text-[16px] max-w-[500px]">
           Create imaginative and visually stunning images through DALL-E AI and
           share them with the community
         </p>
@@ -87,7 +136,7 @@ const CreatePost = () => {
             onClick={generateImg}
             className="text-white bg-green-700 font-medium rounded-md text-sm w-full sm:w-auto px-5 py-2.5 text-center"
           >
-            {generatingImg ? "Generating..." : "Generate"}
+            {generatingImg ? 'Generating...' : 'Generate'}
           </button>
         </div>
 
@@ -100,7 +149,7 @@ const CreatePost = () => {
             type="submit"
             className="mt-3 bg-[#6469ff] text-white font-medium rounded-md text-sm w-full sm:w-auto px-5 py-2.5 text-center"
           >
-            {loading ? "Sharing..." : "Share with the community"}
+            {loading ? 'Sharing...' : 'Share with the community'}
           </button>
         </div>
       </form>
